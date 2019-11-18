@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Pengaturan Kamera
+{% endblock %}
+
+{% block page_title %}
+  Pengaturan Kamera
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-6 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="header-title">Kamera Wajah - Kanan</h4>
+          <p>Kamera yang dipilih akan menjadi kamera utama pada mode trigger dan timer.</p>
+          <div class="form-group">
+            <label class="col-form-label">Kamera</label>
+            <select id="select-camera-face-right" data-target-id="camera-face-right" class="form-control camera-select"></select>
+          </div>
+          <div class="embed-responsive embed-responsive-4by3">
+            <video class="embed-responsive-item" id="camera-face-right">Hasil luaran kamera akan muncul pada kotak ini.</video>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="header-title">Kamera Wajah - Depan</h4>
+          <div class="form-group">
+            <label class="col-form-label">Kamera</label>
+            <select id="select-camera-face-front" data-target-id="camera-face-front" class="form-control camera-select"></select>
+          </div>
+          <div class="embed-responsive embed-responsive-4by3">
+            <video class="embed-responsive-item" id="camera-face-front">Hasil luaran kamera akan muncul pada kotak ini.</video>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="header-title">Kamera Wajah - Kiri</h4>
+          <div class="form-group">
+            <label class="col-form-label">Kamera</label>
+            <select id="select-camera-face-left" data-target-id="camera-face-left" class="form-control camera-select"></select>
+          </div>
+          <div class="embed-responsive embed-responsive-4by3">
+            <video class="embed-responsive-item" id="camera-face-left">Hasil luaran kamera akan muncul pada kotak ini.</video>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="header-title">Kamera eKTP</h4>
+          <div class="form-group">
+            <label class="col-form-label">Kamera</label>
+            <select id="select-camera-ektp" data-target-id="camera-ektp" class="form-control camera-select"></select>
+          </div>
+          <div class="embed-responsive embed-responsive-4by3">
+            <video class="embed-responsive-item" id="camera-ektp">Hasil luaran kamera akan muncul pada kotak ini.</video>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <div class="form-group">
+            <label class="col-form-label">Metode Pengambilan</label>
+            <select id="capture-mode" class="form-control">
+              <option value="trigger">Trigger/Tombol</option>
+              <option value="timer">Timer</option>
+              <option value="burst">Burst</option>
+            </select>
+          </div>
+          <button id="save-button" type="button" class="btn btn-primary btn-flat btn-lg mt-3">Simpan</button>
+          <p id="save-message" class="d-none">Konfigurasi telah disimpan!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block js_scripts %}
+  <script>
+    $(() => {
+      const CONFIG_CAMERA_MAP = {
+        'camera-face-left': 'faceLeft',
+        'camera-face-front': 'faceFront',
+        'camera-face-right': 'faceRight',
+        'camera-ektp': 'ektp'
+      }
+      const DEFAULT_CONFIG = {
+        // each value stores the deviceId of the corresponding camera.
+        cameras: {
+          faceLeft: null,
+          faceFront: null,
+          faceRight: null,
+          ektp: null
+        },
+        captureMethod: null
+      }
+
+      // load config
+      const currentConfig = localStorage.getItem('config')
+      let config
+      if (currentConfig === null) {
+        // do deep copy
+        config = $.extend(true, {}, DEFAULT_CONFIG)
+      } else {
+        try {
+          config = JSON.parse(currentConfig)
+        } catch (e) {
+          // parsing current config failed. load default config
+          console.warn(e)
+          config = $.extend(true, {}, DEFAULT_CONFIG)
+        }
+      }
+      // save button
+      $('#save-button').click(ev => {
+        saveConfig(config)
+        ev.preventDefault()
+
+        // show message
+        $('#save-message').removeClass('d-none')
+        // hide after 3000 ms
+        setTimeout(() => {
+          $('#save-message').addClass('d-none')
+        }, 3000)
+      })
+
+      function saveConfig(config) {
+        localStorage.setItem('config', JSON.stringify(config))
+      }
+
+      // load available video inputs and populate the camera selection.
+      const streams = {}
+      navigator.mediaDevices.enumerateDevices()
+        .then(devices => devices.filter(device => device.kind === 'videoinput'))
+        .then(videoDevices => {
+          $('.camera-select').each(function () {
+            const $elem = $(this)
+            const targetId = $elem.data('target-id')
+
+            // populate the selections, pick one from the list if it's not available.
+            let hasCurrentDeviceId = false
+            let deviceId
+            videoDevices.forEach(videoDevice => {
+              const $option = $(`<option value="${videoDevice.deviceId}">${videoDevice.label}</option>`)
+              if (videoDevice.deviceId === config.cameras[CONFIG_CAMERA_MAP[targetId]]) {
+                $option.prop('selected', 'selected')
+                hasCurrentDeviceId = true
+                deviceId = videoDevice.deviceId
+              }
+              $elem.append($option)
+            })
+            if (!hasCurrentDeviceId) {
+              deviceId = videoDevices[0].deviceId
+              config.cameras[CONFIG_CAMERA_MAP[targetId]] = deviceId
+            }
+
+            // check if the stream is available or not.
+            initializeStream(deviceId, targetId)
+
+            // setup event for changes
+            $elem.change(function () {
+              const newDeviceId = this.options[this.selectedIndex].value
+              config.cameras[CONFIG_CAMERA_MAP[targetId]] = newDeviceId
+              initializeStream(newDeviceId, targetId)
+            })
+          })
+        })
+        .catch(err => {
+          console.error(err)
+        })
+
+      function initializeStream(deviceId, targetId) {
+        const video = document.getElementById(targetId)
+
+        if (streams.hasOwnProperty(deviceId)) {
+          // change the stream source
+          video.srcObject = streams[deviceId].stream
+          video.play()
+          streams[deviceId].targets.push(targetId)
+
+          // cleanup old one
+          Object.keys(streams)
+            .filter(id => id !== deviceId)
+            .forEach(key => {
+              const idx = streams[key].targets.indexOf(id => targetId === id)
+              if (idx !== -1) {
+                streams[key].targets.splice(idx, 1)
+
+                // stop stream if no more screen is using, to conserve resource
+                if (streams[key].targets.length === 0) {
+                  streams[key].stream.getTracks().forEach(track => {
+                    track.stop()
+                  })
+                  delete streams[key]
+                }
+              }
+            })
+        } else {
+          // initialize new stream
+          navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { exact: deviceId } }
+          }).then(stream => {
+            streams[deviceId] = {
+              stream: stream,
+              targets: [targetId]
+            }
+
+            // change the stream source
+            video.srcObject = streams[deviceId].stream
+            video.play()
+          }).catch(err => {
+            console.error(err)
+          })
+        }
+      }
+
+    })
+  </script>
+{% endblock %}

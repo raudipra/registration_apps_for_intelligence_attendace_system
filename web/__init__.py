@@ -24,9 +24,11 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # a simple page that says hello
-    @app.route('/hello')
-    def hello():
-        return 'Hello, World!'
+    from . import (
+        personnel, api_endpoints, user_config
+    )
+    app.register_blueprint(personnel.bp)
+    app.register_blueprint(api_endpoints.bp)
+    app.register_blueprint(user_config.bp)
 
     return app

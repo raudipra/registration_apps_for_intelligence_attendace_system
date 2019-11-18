@@ -2,3 +2,268 @@
 <!--
   TODO STUB
 -->
+{% block title %}
+  Pendaftaran Personel - Pengambilan Gambar Wajah
+{% endblock %}
+
+{% block page_title %}
+  Pendaftaran Personel - Pengambilan Gambar Wajah
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <!-- Camera preview part -->
+    <div class="col-8 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <div id="picture-live" class="embed-responsive embed-responsive-4by3">
+            <video class="embed-responsive-item" id="current-camera">Hasil luaran kamera akan muncul pada kotak ini.</video>
+          </div>
+          <div class="d-none embed-responsive embed-responsive-4by3" id="picture-preview">
+            <canvas id="canvas" class="embed-responsive-item"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-4 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <h4 id="picture-title" class="header-title">Tampak Samping Kanan</h4>
+          <p id="picture-hint">
+            Arahkan kamera ke arah samping kanan wajah pengguna.<br/>
+            Pastikan bagian kanan wajah terlihat dengan jelas.
+          </p>
+          <button id="picture-capture" type="button" class="btn btn-primary btn-flat btn-lg mt-3">Ambil Foto</button>
+          <button id="picture-reset" type="button" class="d-none btn btn-danger btn-flat btn-lg mt-3">Ulangi</button>
+          <button id="picture-confirm" type="button" class="d-none btn btn-primary btn-flat btn-lg mt-3">Terima & Lanjutkan</button>
+        </div>
+      </div>
+    </div>
+    <div class="col-4 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="header-title">Tampak Kanan</h4>
+          <img id="picture-right" src="{{ url_for('static', filename='img/user_placeholder.svg') }}" alt="Tampak Kanan">
+        </div>
+      </div>
+    </div>
+    <div class="col-4 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="header-title">Tampak Depan</h4>
+          <img id="picture-front" src="{{ url_for('static', filename='img/user_placeholder.svg') }}" alt="Tampak Depan">
+        </div>
+      </div>
+    </div>
+    <div class="col-4 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="header-title">Tampak Kiri</h4>
+          <img id="picture-left" src="{{ url_for('static', filename='img/user_placeholder.svg') }}" alt="Tampak Kiri">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
+  </div>
+{% endblock %}
+
+{% block js_scripts %}
+  <script>
+    $(() => {
+      let streaming = false
+      let width = 720, height = null
+
+      const canvas = document.getElementById('canvas')
+      const cameraPreview = document.getElementById('current-camera')
+      const pictureRight = document.getElementById('picture-right')
+      const pictureFront = document.getElementById('picture-front')
+      const pictureLeft = document.getElementById('picture-left')
+
+      const MESSAGE_DISPLAY = {
+        right: {
+          title: 'Tampak Muka Kanan',
+          hint: 'Arahkan kamera ke arah samping kanan wajah pengguna.<br/>Pastikan bagian kanan wajah terlihat dengan jelas.'
+        },
+        front: {
+          title: 'Tampak Muka Depan',
+          hint: 'Arahkan kamera ke arah depan wajah pengguna.<br/>Pastikan bagian depan wajah terlihat dengan jelas.'
+        },
+        left: {
+          title: 'Tampak Muka Kiri',
+          hint: 'Arahkan kamera ke arah kiri wajah pengguna.<br/>Pastikan bagian kiri wajah terlihat dengan jelas.'
+        },
+        end: {
+          title: 'Pengambilan Wajah Selesai',
+          hint: 'Pengambilan wajah telah selesai.'
+        }
+      }
+
+      // try to load the configuration.
+      let config
+      try {
+        config = JSON.parse(localStorage.getItem('config'))
+      } catch (e) {
+        console.warn(e)
+        config = null
+      }
+
+      // load stream from saved config, or from one picked by the user.
+      let deviceId
+      if (config) {
+        deviceId = config.cameras.faceRight
+      } else {
+        deviceId = null
+      }
+      navigator.mediaDevices.getUserMedia({ video: { deviceId: deviceId ? { exact: deviceId } : undefined } })
+        .then(stream => {
+          cameraPreview.srcObject = stream
+          cameraPreview.play()
+        })
+        .catch(err => {
+          console.error(err)
+        })
+      cameraPreview.addEventListener('canplay', ev => {
+        if (!streaming) {
+          height = cameraPreview.videoHeight / (cameraPreview.videoWidth/width)
+          cameraPreview.setAttribute('width', width)
+          cameraPreview.setAttribute('height', height)
+
+          streaming = true
+        }
+      }, false)
+
+      let currentPicture = 'right' // shows which picture is being taken.
+      $('#picture-capture').on('click', ev => {
+        // take picture
+        const context = canvas.getContext('2d')
+        if (width && height) {
+          canvas.width = width
+          canvas.height = height
+          context.drawImage(cameraPreview, 0, 0, width, height)
+
+          // ask user to confirm
+          showConfirmPicture(currentPicture)
+        }
+
+        ev.preventDefault()
+      })
+      $('#picture-reset').on('click', ev => {
+        resetPicture()
+      })
+      $('#picture-confirm').on('click', ev => {
+        confirmPicture(currentPicture)
+      })
+
+      function showConfirmPicture(pictureType) {
+        // show preview of captured image
+        cameraPreview.pause()
+        $('#picture-live').addClass('d-none')
+        $('#picture-preview').removeClass('d-none')
+
+        $('#picture-capture').addClass('d-none')
+        $('#picture-reset').removeClass('d-none')
+        $('#picture-confirm').removeClass('d-none')
+      }
+
+      function confirmPicture(pictureType) {
+        // TODO add step to verify image.
+        canvas.toBlob(blob => {
+          // upload the image
+          checkFace(blob)
+            .done(statusCode => {
+              if (statusCode !== 0) {
+                // display error as modal
+                return
+              }
+
+              // save image to preview
+              const data = canvas.toDataURL('image/png')
+              switch(pictureType) {
+                case 'right':
+                  pictureRight.setAttribute('src', data)
+                  currentPicture = 'front'
+                  break
+                case 'front':
+                  pictureFront.setAttribute('src', data)
+                  currentPicture = 'left'
+                  break
+                case 'left':
+                  pictureLeft.setAttribute('src', data)
+                  currentPicture = 'end'
+                  break
+              }
+
+              // change message
+              $('#picture-title').text(MESSAGE_DISPLAY[currentPicture].title)
+              $('#picture-hint').text(MESSAGE_DISPLAY[currentPicture].hint)
+
+              // continue
+              if (currentPicture !== 'end') {
+                // resume stream
+                $('#picture-preview').addClass('d-none')
+                $('#picture-live').removeClass('d-none')
+                cameraPreview.play()
+
+                $('#picture-capture').removeClass('d-none')
+                $('#picture-reset').addClass('d-none')
+                $('#picture-confirm').addClass('d-none')
+              } else {
+                // show confirm/reset all.
+              }
+            })
+        })
+      }
+
+      function resetPicture(pictureType) {
+        $('#picture-preview').addClass('d-none')
+        $('#picture-live').removeClass('d-none')
+        cameraPreview.play()
+
+        $('#picture-capture').removeClass('d-none')
+        $('#picture-reset').addClass('d-none')
+        $('#picture-confirm').addClass('d-none')
+
+        $('#picture-title').text(MESSAGE_DISPLAY[pictureType].title)
+        $('#picture-hint').text(MESSAGE_DISPLAY[pictureType].hint)
+      }
+
+      const PLACEHOLDER_IMG_SRC = "{{ url_for('static', filename='img/user_placeholder.svg') }}"
+      function resetAll() {
+        // clear all pictures
+        const context = canvas.getContext('2d')
+        context.fillStyle = "#AAA";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        // replace with placeholder
+        pictureRight.setAttribute('src', PLACEHOLDER_IMG_SRC)
+        pictureFront.setAttribute('src', PLACEHOLDER_IMG_SRC)
+        pictureLeft.setAttribute('src', PLACEHOLDER_IMG_SRC)
+
+        currentPicture = 'right'
+        resetPicture(currentPicture)
+      }
+
+      /**
+       * Check the existence of human face in a picture.
+       * @param {Blob} image image to check, represented as Blob.
+       * @return {jQuery.deferred<Number>}
+       **/
+      function checkFace(image) {
+        const data = new FormData()
+        data.append('img', image)
+        return $.ajax({
+          method: 'POST',
+          url: "{{ url_for('api_endpoints.check_face')}}",
+          data: data,
+          processData: false
+        }).done(data => {
+          return data.status
+        }).fail(() => {
+          // TODO implement
+        })
+      }
+    })
+  </script>
+{% endblock %}

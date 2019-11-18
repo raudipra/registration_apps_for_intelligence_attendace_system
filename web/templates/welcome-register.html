@@ -1,6 +1,47 @@
 {% extends "base.html" %}
-<!--
-Simple prompt to welcome the user.
+<!-- Simple prompt to start the registration process. -->
+{% block title %}
+  Pendaftaran Personel
+{% endblock %}
 
-TODO STUB
--->
+{% block page_title %}
+  Pendaftaran Personel
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="header-title">Selamat Datang</h4>
+        <p>Pastikan orang yang akan didaftarkan sudah berada di tempat. <br/>
+        Tekan "Mulai Pendaftaran" untuk memulai proses pendaftaran.</p>
+
+        <a id="capture-url" href="{{ url_for('personnel.capture_face') }}">
+          <button type="button" class="btn btn-primary btn-flat btn-lg mt-3">Mulai Pendaftaran</button>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block js_scripts %}
+  <script>
+    $(() => {
+      // load config to determine the capture-url
+      let config
+      let captureMethod
+      try {
+        config = JSON.parse(localStorage.getItem('config'))
+        captureMethod = config.captureMethod
+      } catch (e) {
+        console.warn(e)
+        captureMethod = "{{ default_capture_method }}"
+      }
+
+      const $captureLink = $('#capture-url')
+      $captureLink.attr('href', $captureLink.attr('href') + `?capture=${encodeURI(captureMethod)}`)
+    })
+  </script>
+{% endblock %}

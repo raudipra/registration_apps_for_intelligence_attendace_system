@@ -6,10 +6,131 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>{% block title %}{% endblock %}</title>
   {% block head %}{% endblock %}
+
+  <!-- CSS SCRIPTS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='srtdash/assets/css/bootstrap.min.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='srtdash/assets/css/font-awesome.min.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='srtdash/assets/css/themify-icons.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='srtdash/assets/css/metisMenu.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='srtdash/assets/css/owl.carousel.min.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='srtdash/assets/css/slicknav.min.css') }}"/>
+
+  <!-- others css -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='srtdash/assets/css/typography.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='srtdash/assets/css/default-css.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='srtdash/assets/css/styles.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='srtdash/assets/css/responsive.css') }}"/>
 </head>
 
 <body>
-{% block content %}{% endblock %}
+  <div class="page-container">
+    <div class="sidebar-menu">
+      <div class="sidebar-header">
+        <div class="logo">
+          <a href="dashboard.html"><img src="{{ url_for('static', filename='icons/cognixy-logo.png') }}" alt="logo"></a>
+        </div>
+      </div>
+      <div class="main-menu">
+        <div class="menu-inner">
+          <nav>
+            <ul class="metismenu" id="menu">
+              <li>
+                <a href="dashboard.html"><i class="ti-camera"></i><span>Camera</span></a>
+              </li>
+              <li>
+                <a href="person.html"><i class="ti-user"></i><span>Personnel</span></a>
+              </li>
+              <li>
+                <a href="javascript:void(0)" aria-expanded="true"><i class="ti-briefcase"></i><span>Data
+                    Management</span></a>
+                <ul class="collapse">
+                  <li><a href="person.html">Personnel</a></li>
+                  <li><a href="javascript:void(0)" aria-expanded="true">Registration</a>
+                    <ul class="collapse">
+                      <li><a href="person_form.html">Personnel</a></li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a href="javascript:void(0)" aria-expanded="true">
+                  <i class="ti-settings"></i><span>Settings</span>
+                </a>
+                <ul class="collapse">
+                  <li><a href="cameras.html">Camera</a></li>
+                  <li><a href="javascript:void(0)" aria-expanded="true">Registration</a>
+                    <ul class="collapse">
+                      <li><a href="camera_form.html">Camera</a></li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+    <div class="main-content">
+      <div class="header-area">
+          <div class="row align-items-center">
+            <!-- nav and search button -->
+            <div class="col-md-6 col-sm-8 clearfix">
+              <div class="nav-btn pull-left">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+              </div>
+            </div>
+            <!-- profile info & task notification -->
+            <div class="col-md-6 col-sm-4 clearfix">
+              <ul class="notification-area pull-right">
+                <li id="full-view"><i class="ti-fullscreen"></i></li>
+                <li id="full-view-exit"><i class="ti-zoom-out"></i></li>
+                <li class="settings-btn">
+                  <a href="login.html"><i class="ti-power-off"></i></a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <!-- header area end -->
+        <!-- page title area start -->
+        <div class="page-title-area">
+          <div class="row align-items-center">
+            <div class="col-sm-6">
+              <div class="breadcrumbs-area clearfix">
+                <h4 class="page-title pull-left">{% block page_title %}{% endblock %}</h4>
+              </div>
+            </div>
+            <div class="col-sm-6 clearfix">
+              <div class="user-profile pull-right">
+                <h4 class="user-name dropdown-toggle"><!-- TODO user --></h4>
+              </div>
+            </div>
+          </div>
+        </div>
+      <div class="main-content-inner">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+
+  <!-- JS SCRIPTS -->
+  <script src="{{ url_for('static', filename='js/lib/jquery-2.2.3.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/lib/notify.min.js') }}"></script>
+
+  <!-- bootstrap 4 js -->
+  <script src="{{ url_for('static', filename='srtdash/assets/js/popper.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='srtdash/assets/js/bootstrap.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='srtdash/assets/js/owl.carousel.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='srtdash/assets/js/metisMenu.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='srtdash/assets/js/jquery.slimscroll.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='srtdash/assets/js/jquery.slicknav.min.js') }}"></script>
+
+  <!-- others plugins -->
+  <script src="{{ url_for('static', filename='srtdash/assets/js/plugins.js') }}"></script>
+  <script src="{{ url_for('static', filename='srtdash/assets/js/scripts.js') }}"></script>
+  {% block js_scripts %}{% endblock %}
 </body>
 
 </html>
