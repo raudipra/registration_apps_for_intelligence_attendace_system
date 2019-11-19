@@ -1,4 +1,232 @@
 {% extends "base.html" %}
 <!--
-  TODO STUB
+  Face trigger using burst
 -->
+{% block title %}
+Pendaftaran Personel - Pengambilan Gambar Wajah
+{% endblock %}
+
+{% block page_title %}
+Pendaftaran Personel - Pengambilan Gambar Wajah
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-6 col-md-12 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="header-title">Kontrol</h4>
+        <button id="picture-capture" type="button" class="btn btn-primary btn-flat btn-lg mt-3">Ambil Foto</button>
+        <button id="picture-reset" type="button" class="d-none btn btn-danger btn-flat btn-lg mt-3">Ulangi</button>
+        <button id="picture-save" type="button" class="d-none btn btn-success btn-flat btn-lg mt-3">Simpan Foto</button>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6 col-md-12 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="header-title">Kamera - Wajah Kanan</h4>
+        <div id="picture-face-left-live" class="picture-preview embed-responsive embed-responsive-4by3">
+          <video class="embed-responsive-item" id="video-face-left">Hasil luaran kamera akan muncul pada kotak
+            ini.</video>
+        </div>
+        <div class="d-none picture-canvas embed-responsive embed-responsive-4by3" id="picture-face-left-preview">
+          <canvas id="canvas-face-left" class="embed-responsive-item"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6 col-md-12 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="header-title">Kamera - Wajah Depan</h4>
+        <div id="picture-face-front-live" class="picture-preview embed-responsive embed-responsive-4by3">
+          <video class="embed-responsive-item" id="video-face-front">Hasil luaran kamera akan muncul pada kotak
+            ini.</video>
+        </div>
+        <div class="d-none picture-canvas embed-responsive embed-responsive-4by3" id="picture-face-front-preview">
+          <canvas id="canvas-face-front" class="embed-responsive-item"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6 col-md-12 mt-5">
+    <div class="card">
+      <div class="card-body">
+          <h4 class="header-title">Kamera - Wajah Kiri</h4>
+        <div id="picture-face-right-live" class="picture-preview embed-responsive embed-responsive-4by3">
+          <video class="embed-responsive-item" id="video-face-right">Hasil luaran kamera akan muncul pada kotak
+            ini.</video>
+        </div>
+        <div class="d-none picture-canvas embed-responsive embed-responsive-4by3" id="picture-face-right-preview">
+          <canvas id="canvas-face-right" class="embed-responsive-item"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% include "partials/modal-error.html" %}
+{% endblock %}
+
+{% block js_scripts %}
+<script src="{{ url_for('static', filename='js/camera-object.js') }}"></script>
+<script>
+  $(() => {
+    // try to load the configuration.
+    let config
+    try {
+      config = JSON.parse(localStorage.getItem('config'))
+    } catch (e) {
+      console.warn(e)
+      config = null
+    }
+
+    // load stream from saved config, or from one picked by the user.
+    /**
+     * @type {CameraObject}
+     */
+    let cameraFaceRight
+    /**
+     * @type {CameraObject}
+     */
+    let cameraFaceFront
+    /**
+     * @type {CameraObject}
+     */
+    let cameraFaceLeft
+    if (config) {
+      cameraFaceRight = new CameraObject(config.cameras.faceRight, 'video-face-left', 'canvas-face-left')
+      cameraFaceFront = new CameraObject(config.cameras.faceFront, 'video-face-front', 'canvas-face-front')
+      cameraFaceLeft = new CameraObject(config.cameras.faceLeft, 'video-face-right', 'canvas-face-right')
+    } else {
+      cameraFaceRight = new CameraObject(null, 'video-face-left', 'canvas-face-left')
+      cameraFaceFront = new CameraObject(null, 'video-face-front', 'canvas-face-front')
+      cameraFaceLeft = new CameraObject(null, 'video-face-right', 'canvas-face-right')
+    }
+
+    // initialize stream from respective cameras
+    Promise.all([ cameraFaceRight, cameraFaceFront, cameraFaceLeft ].map(
+      camera => navigator.mediaDevices.getUserMedia(camera.mediaConstraints)
+      ))
+      .then(streams => {
+        const [streamFaceRight, streamFaceFront, streamFaceLeft] = streams
+
+        cameraFaceRight.attachStream(streamFaceRight)
+        cameraFaceFront.attachStream(streamFaceFront)
+        cameraFaceLeft.attachStream(streamFaceLeft)
+      })
+      .catch(err => {
+        console.error(err)
+        $('#modal-error-content').text(`Gagal berkomunikasi dengan salah satu kamera! Alasan: ${err}`)
+        $('#modal-error').modal('show')
+      })
+
+    // initialize listeners to buttons
+    $('#picture-capture').click(ev => {
+      [ cameraFaceRight, cameraFaceFront, cameraFaceLeft ].forEach(camera => {
+        camera.captureSnapshotFromCurrentStream()
+        camera.pauseStream()
+        camera.setVideoVisible(false)
+        camera.setCanvasVisible(true)
+      })
+      $('#picture-capture').addClass('d-none')
+      $('#picture-reset').removeClass('d-none')
+      $('#picture-save').removeClass('d-none')
+    })
+
+    $('#picture-reset').click(ev => {
+      [ cameraFaceRight, cameraFaceFront, cameraFaceLeft ].forEach(camera => {
+        camera.clearCanvas()
+        camera.setVideoVisible(true)
+        camera.setCanvasVisible(false)
+        camera.resumeStream()
+      })
+      $('#picture-capture').removeClass('d-none')
+      $('#picture-reset').addClass('d-none')
+      $('#picture-save').addClass('d-none')
+    })
+
+    const FACE_MAP = {
+      face1: 'Wajah Kiri',
+      face2: 'Wajah Depan',
+      face3: 'Wajah Kanan',
+    }
+
+    const STATUS_MESSAGE = {
+      0: 'OK',
+      1: 'Tidak ada wajah terdeteksi!',
+      2: 'Lebih dari satu wajah terdeteksi!'
+    }
+
+    $('#picture-save').click(ev => {
+      // check for image validity
+      const cameras = [ cameraFaceRight, cameraFaceFront, cameraFaceLeft ]
+        .map(camera => camera.canvasContentBlobPromise)
+      Promise.all(cameras)
+        .then(blobs => blobs.map((blob, idx) => new File([blob], `face${idx+1}.png`, { type: 'image/png' })))
+        .then(files => {
+          // upload the files for checking
+          const formData = new FormData()
+          files.forEach((file, idx) => {
+            formData.append(`face${idx+1}`, file)
+          })
+          $.ajax({
+            method: 'POST',
+            url: "{{ url_for('api_endpoints.check_face_three')}}",
+            contentType: false,
+            enctype: 'multipart/form-data',
+            cache: false,
+            data: formData,
+            processData: false
+          }).done(data => {
+            let errorMessage = ''
+            Object.keys(data).forEach(status => {
+              const part = status.substr(0, 5)
+
+              // display status
+              const statusCode = data[status]
+              if (statusCode !== 0) {
+                if (errorMessage.length === 0) {
+                  errorMessage += '<ul>'
+                }
+
+                errorMessage += `<li>${FACE_MAP[part]}: ${STATUS_MESSAGE[statusCode]}</li>`
+              }
+            })
+            if (errorMessage.startsWith('<ul>')) {
+              errorMessage += '</ul>'
+            }
+
+            if (errorMessage.length > 0) {
+              // display error as modal
+              $('#modal-error-content').html(`<p>Gagal menyimpan gambar! Hasil pengecekan:</p>${errorMessage}`)
+              $('#modal-error').modal('show')
+              return
+            }
+
+            saveToSession()
+          }).fail((xhr, status, err) => {
+            $('#modal-error-content').html(`<p>Error ${status}. Detail: ${err}</p>`)
+            $('#modal-error').modal('show')
+          })
+        })
+        .catch(err => {
+          console.error(err)
+          $('#modal-error-content').html(`<p>Gagal mengunggah gambar. Detail: ${err}</p>`)
+          $('#modal-error').modal('show')
+        })
+    })
+
+    function saveToSession() {
+      const sessionData = {
+        faceLeft: cameraFaceLeft.canvasContentPNG,
+        faceFront: cameraFaceFront.canvasContentPNG,
+        faceRight: cameraFaceRight.canvasContentPNG
+      }
+      sessionStorage.setItem('personnel_reg', JSON.stringify(sessionData))
+      // move to next page
+      window.location = "{{ url_for('personnel.capture_ektp') }}"
+    }
+  })
+</script>
+{% endblock %}

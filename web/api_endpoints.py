@@ -12,7 +12,6 @@ bp = Blueprint('api_endpoints', __name__, url_prefix='/api')
 
 @bp.route('/check_face', methods=('POST',))
 def check_face():
-    myrequest = request
     if 'img' not in request.files:
         response = make_response({
             'message': 'No valid image detected.'
@@ -42,3 +41,32 @@ def check_face():
 
     return response
 
+@bp.route('/check_face_three', methods=('POST',))
+def check_face_three():
+    # check validity of images
+    err = {}
+    keys = ['face1', 'face2', 'face3']
+    for key in keys:
+        if key not in request.files:
+            err[key] = 'No valid image detected'
+            continue
+        if request.files[key].filename == '':
+            err[key] = 'No valid image detected'
+
+    if bool(err): # there is an error
+        response = make_response(err, 400)
+        response.mimetype = 'application/json'
+        return response
+
+    # convert images to cv2 instance (TODO: check for non-file)
+    face1, face2, face3 = map(
+        lambda key: cv2.imdecode(np.fromstring(request.files[key].read(), np.uint8), cv2.IMREAD_UNCHANGED),
+        keys
+    )
+    result = face_check.is_three_faces_valid(face1, face2, face3)
+    response = make_response(result)
+    response.mimetype = 'application/json'
+    if not all(v == 0 for v in list(result.values())):
+        response.status = 422
+
+    return response
