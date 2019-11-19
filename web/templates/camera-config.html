@@ -135,6 +135,8 @@
       })
 
       function saveConfig(config) {
+        const captureMethodNode = document.getElementById('capture-mode')
+        config.captureMethod = captureMethodNode.options[captureMethodNode.selectedIndex].value
         localStorage.setItem('config', JSON.stringify(config))
       }
 

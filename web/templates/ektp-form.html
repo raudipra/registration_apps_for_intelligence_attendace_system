@@ -14,14 +14,246 @@
 
 {% block content %}
   <div class="row">
-
+    <div class="col-md-12 col-lg-6 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <button id="picture-capture" type="button" class="btn btn-lg btn-primary">Ambil Gambar eKTP</button>
+          <button id="picture-reset" type="button" class="d-none btn btn-lg btn-danger">Ulangi Ambil e-KTP</button>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-12 col-lg-6 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <div id="picture-live" class="embed-responsive embed-responsive-4by3">
+            <video class="embed-responsive-item" id="current-camera">Hasil luaran kamera akan muncul pada kotak
+              ini.</video>
+          </div>
+          <div class="d-none embed-responsive embed-responsive-4by3" id="picture-preview">
+            <canvas id="canvas" class="embed-responsive-item"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-12 mt-5">
+      <div class="card">
+        <div class="card-body">
+          <h4>Data e-KTP</h4>
+          <form id="form">
+            <div class="form-group">
+              <label for="nik" class="col-form-label">NIK</label>
+              <input class="form-control" type="text" name="nik">
+            </div>
+            <div class="form-group">
+              <label for="nama" class="col-form-label">Nama</label>
+              <input class="form-control" type="text" name="nama">
+            </div>
+            <div class="form-group">
+              <label for="tempat_lahir" class="col-form-label">Tempat Lahir</label>
+              <input class="form-control" type="text" name="tempat_lahir">
+            </div>
+            <div class="form-group">
+              <label for="tanggal_lahir" class="col-form-label">Tanggal Lahir</label>
+              <input class="form-control" type="date" name="tanggal_lahir">
+            </div>
+            <div class="form-group">
+              <label for="jenis_kelamin" class="col-form-label">Jenis Kelamin</label>
+              <input class="form-control" type="text" name="jenis_kelamin">
+            </div>
+            <div class="form-group">
+              <label for="gol_darah" class="col-form-label">Gol. Darah</label>
+              <input class="form-control" type="text" name="gol_darah">
+            </div>
+            <div class="form-group">
+              <label for="alamat" class="col-form-label">Alamat</label>
+              <input class="form-control" type="text" name="alamat">
+            </div>
+            <div class="form-group">
+              <label for="rtrw" class="col-form-label">RT/RW</label>
+              <input class="form-control" type="text" name="rtrw">
+            </div>
+            <div class="form-group">
+              <label for="kel_desa" class="col-form-label">Kelurahan/Desa</label>
+              <input class="form-control" type="text" name="kel_desa">
+            </div>
+            <div class="form-group">
+              <label for="kecamatan" class="col-form-label">Kecamatan</label>
+              <input class="form-control" type="text" name="kecamatan">
+            </div>
+            <div class="form-group">
+              <label for="kabupaten_kota" class="col-form-label">Kabupaten/Kota</label>
+              <input class="form-control" type="text" name="kabupaten_kota">
+            </div>
+            <div class="form-group">
+              <label for="provinsi" class="col-form-label">Provinsi</label>
+              <input class="form-control" type="text" name="provinsi">
+            </div>
+            <div class="form-group">
+              <label for="agama" class="col-form-label">Agama</label>
+              <input class="form-control" type="text" name="agama">
+            </div>
+            <div class="form-group">
+              <label for="status_perkawinan" class="col-form-label">Status Perkawinan</label>
+              <input class="form-control" type="text" name="status_perkawinan">
+            </div>
+            <div class="form-group">
+              <label for="pekerjaan" class="col-form-label">Pekerjaan</label>
+              <input class="form-control" type="text" name="pekerjaan">
+            </div>
+            <button type="submit" class="btn btn-lg btn-primary">Simpan</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal fade" id="modal-error">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Error</h5>
+          <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        </div>
+        <div class="modal-body" id="modal-error-content"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
   </div>
 {% endblock %}
 
 {% block js_scripts %}
   <script>
     $(() => {
+      let streaming = false
+      let width = 720, height = null
 
+      const canvas = document.getElementById('canvas')
+      const cameraPreview = document.getElementById('current-camera')
+
+      // try to load the configuration.
+      let config
+      try {
+        config = JSON.parse(localStorage.getItem('config'))
+      } catch (e) {
+        console.warn(e)
+        config = null
+      }
+
+      // load stream from saved config, or from one picked by the user.
+      let deviceId
+      if (config) {
+        deviceId = config.cameras.ektp
+      } else {
+        deviceId = null
+      }
+      // play stream from ektp camera
+      navigator.mediaDevices.getUserMedia({ video: { deviceId: deviceId ? { exact: deviceId } : undefined } })
+        .then(stream => {
+          cameraPreview.srcObject = stream
+          cameraPreview.play()
+        })
+        .catch(err => {
+          console.error(err)
+        })
+
+      cameraPreview.addEventListener('canplay', ev => {
+        if (!streaming) {
+          height = cameraPreview.videoHeight / (cameraPreview.videoWidth / width)
+          cameraPreview.setAttribute('width', width)
+          cameraPreview.setAttribute('height', height)
+
+          streaming = true
+        }
+      }, false)
+
+      $('#picture-capture').on('click', ev => {
+        // take picture
+        const context = canvas.getContext('2d')
+        if (width && height) {
+          canvas.width = width
+          canvas.height = height
+          context.drawImage(cameraPreview, 0, 0, width, height)
+          cameraPreview.pause()
+
+          $('#picture-capture').addClass('d-none')
+          $('#picture-reset').removeClass('d-none')
+
+          // check eKTP photo
+          // TODO show loading animation
+          canvas.toBlob(blob => {
+            const data = new FormData()
+            const imgFile = new File([blob], 'capture.png', {
+              type: 'image/png'
+            })
+            data.append('img', imgFile)
+            $.ajax({
+              method: 'POST',
+              url: "{{ url_for('personnel.capture_ektp')}}",
+              enctype: 'multipart/form-data',
+              contentType: false,
+              cache: false,
+              data: data,
+              processData: false
+            }).done(data => {
+              // data captured. put to form.
+              $('input[name="nik"]').val(data.nik)
+              $('input[name="nama"]').val(data.nama)
+              $('input[name="tempat_lahir"]').val(data.tempat_lahir)
+              $('input[name="tanggal_lahir"]').val(data.tanggal_lahir)
+              $('input[name="jenis_kelamin"]').val(data.jenis_kelamin)
+              $('input[name="gol_darah"]').val(data.gol_darah)
+              $('input[name="rtrw"]').val(data.rtrw)
+              $('input[name="kel_desa"]').val(data.kel_desa)
+              $('input[name="kecamatan"]').val(data.kecamatan)
+              $('input[name="kabupaten_kota"]').val(data.kabupaten_kota)
+              $('input[name="provinsi"]').val(data.provinsi)
+              $('input[name="agama"]').val(data.agama)
+              $('input[name="status_perkawinan"]').val(data.status_perkawinan)
+              $('input[name="pekerjaan"]').val(data.pekerjaan)
+            }).fail((xhr, status, err) => {
+              $('#modal-error-content').html(`<p>Error ${status}. Detail: ${err}</p>`)
+              $('#modal-error').modal('show')
+            })
+          })
+        }
+
+        ev.preventDefault()
+      })
+
+      // reset capture
+      $('#picture-reset').click(ev => {
+        cameraPreview.play()
+        $('#picture-capture').removeClass('d-none')
+        $('#picture-reset').addClass('d-none')
+      })
+
+
+      $('#form').submit(function (ev) {
+        ev.preventDefault()
+        ev.stopPropagation()
+
+        // save form details as JS object
+        const formData = new FormData(document.getElementById('form'))
+        const object = {}
+        formData.forEach((value, key) => { object[key] = value })
+
+        // get last data from the canvas
+        const context = canvas.getContext('2d')
+        const image = canvas.toDataURL('image/png')
+        save(object, image)
+      })
+
+      function save(formData, image) {
+        const sessionData = JSON.parse(sessionStorage.getItem('personnel_reg'))
+        sessionData.ektp = {
+          data: formData,
+          image: image
+        }
+        sessionStorage.setItem('personnel_reg', JSON.stringify(sessionData))
+        // move to next page
+        window.location = "{{ url_for('personnel.preview') }}"
+      }
     })
   </script>
 {% endblock %}

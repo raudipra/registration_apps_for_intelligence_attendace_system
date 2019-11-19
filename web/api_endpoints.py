@@ -12,6 +12,7 @@ bp = Blueprint('api_endpoints', __name__, url_prefix='/api')
 
 @bp.route('/check_face', methods=('POST',))
 def check_face():
+    myrequest = request
     if 'img' not in request.files:
         response = make_response({
             'message': 'No valid image detected.'
@@ -38,30 +39,6 @@ def check_face():
     response.mimetype = 'application/json'
     if result != 0:
         response.status = 422
-    else:
-        response.status = 200
+
     return response
 
-@bp.route('/read_ektp', methods=('POST',))
-def read_ektp():
-    if 'img' not in request.files:
-        response = make_response({
-            'message': 'No valid image detected.'
-        }, 400)
-        response.mimetype = 'application/json'
-        return response
-
-    # handle image
-    imgfile = request.files['img']
-    if imgfile.filename == '':
-        response = make_response({
-            'message': 'No valid image detected.'
-        }, 400)
-        response.mimetype = 'application/json'
-        return response
-
-    # send image for reading
-    #TODO
-    return {
-
-    }

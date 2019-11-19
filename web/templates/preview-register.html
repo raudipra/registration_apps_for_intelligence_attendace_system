@@ -3,5 +3,177 @@
 For displaying the entire new user's registration details before sending them for finalization.
 
 No editing is allowed.
-TODO STUB
 -->
+
+{% block title %}
+  Pendaftaran Personel - Hasil
+{% endblock %}
+
+{% block page_title %}
+  Pendaftaran Personel - Hasil
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-6 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="header-title">Wajah Kiri</h4>
+        <img id="picture-face-left" src="" alt="Wajah Kiri"></img>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="header-title">Wajah Depan</h4>
+        <img id="picture-face-front" src="" alt="Wajah Depan"></img>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="header-title">Wajah Kanan</h4>
+        <img id="picture-face-right" src="" alt="Wajah Kanan"></img>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="header-title">Gambar eKTP</h4>
+        <img id="picture-ektp" src="" alt="eKTP"></img>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="header-title">Data eKTP</h4>
+        <form id="form">
+          <div class="form-group">
+            <label for="nik" class="col-form-label">NIK</label>
+            <input readonly class="form-control" type="text" name="nik">
+          </div>
+          <div class="form-group">
+            <label for="nama" class="col-form-label">Nama</label>
+            <input readonly class="form-control" type="text" name="nama">
+          </div>
+          <div class="form-group">
+            <label for="tempat_lahir" class="col-form-label">Tempat Lahir</label>
+            <input readonly class="form-control" type="text" name="tempat_lahir">
+          </div>
+          <div class="form-group">
+            <label for="tanggal_lahir" class="col-form-label">Tanggal Lahir</label>
+            <input readonly class="form-control" type="date" name="tanggal_lahir">
+          </div>
+          <div class="form-group">
+            <label for="jenis_kelamin" class="col-form-label">Jenis Kelamin</label>
+            <input readonly class="form-control" type="text" name="jenis_kelamin">
+          </div>
+          <div class="form-group">
+            <label for="gol_darah" class="col-form-label">Gol. Darah</label>
+            <input readonly class="form-control" type="text" name="gol_darah">
+          </div>
+          <div class="form-group">
+            <label for="alamat" class="col-form-label">Alamat</label>
+            <input readonly class="form-control" type="text" name="alamat">
+          </div>
+          <div class="form-group">
+            <label for="rtrw" class="col-form-label">RT/RW</label>
+            <input readonly class="form-control" type="text" name="rtrw">
+          </div>
+          <div class="form-group">
+            <label for="kel_desa" class="col-form-label">Kelurahan/Desa</label>
+            <input readonly class="form-control" type="text" name="kel_desa">
+          </div>
+          <div class="form-group">
+            <label for="kecamatan" class="col-form-label">Kecamatan</label>
+            <input readonly class="form-control" type="text" name="kecamatan">
+          </div>
+          <div class="form-group">
+            <label for="kabupaten_kota" class="col-form-label">Kabupaten/Kota</label>
+            <input readonly class="form-control" type="text" name="kabupaten_kota">
+          </div>
+          <div class="form-group">
+            <label for="provinsi" class="col-form-label">Provinsi</label>
+            <input readonly class="form-control" type="text" name="provinsi">
+          </div>
+          <div class="form-group">
+            <label for="agama" class="col-form-label">Agama</label>
+            <input readonly class="form-control" type="text" name="agama">
+          </div>
+          <div class="form-group">
+            <label for="status_perkawinan" class="col-form-label">Status Perkawinan</label>
+            <input readonly class="form-control" type="text" name="status_perkawinan">
+          </div>
+          <div class="form-group">
+            <label for="pekerjaan" class="col-form-label">Pekerjaan</label>
+            <input readonly class="form-control" type="text" name="pekerjaan">
+          </div>
+          <button type="submit" class="btn btn-lg btn-primary">Simpan</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="modal-error">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Error</h5>
+        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+      </div>
+      <div class="modal-body" id="modal-error-content"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block js_scripts %}
+  <script>
+    $(() => {
+      // load config to determine the capture-url
+      let data
+      try {
+        data = JSON.parse(sessionStorage.getItem('personnel_reg'))
+
+        // put the images
+        $('#picture-face-left').attr('src', data.faceLeft)
+        $('#picture-face-front').attr('src', data.faceFront)
+        $('#picture-face-right').attr('src', data.faceRight)
+        $('#picture-ektp').attr('src', data.ektp.image)
+
+        // put the form data
+        const ektpData = data.ektp.data
+        $('input[name="nik"]').val(ektpData.nik)
+        $('input[name="nama"]').val(ektpData.nama)
+        $('input[name="tempat_lahir"]').val(ektpData.tempat_lahir)
+        $('input[name="tanggal_lahir"]').val(ektpData.tanggal_lahir)
+        $('input[name="jenis_kelamin"]').val(ektpData.jenis_kelamin)
+        $('input[name="gol_darah"]').val(ektpData.gol_darah)
+        $('input[name="rtrw"]').val(ektpData.rtrw)
+        $('input[name="kel_desa"]').val(ektpData.kel_desa)
+        $('input[name="kecamatan"]').val(ektpData.kecamatan)
+        $('input[name="kabupaten_kota"]').val(ektpData.kabupaten_kota)
+        $('input[name="provinsi"]').val(ektpData.provinsi)
+        $('input[name="agama"]').val(ektpData.agama)
+        $('input[name="status_perkawinan"]').val(ektpData.status_perkawinan)
+        $('input[name="pekerjaan"]').val(ektpData.pekerjaan)
+      } catch (e) {
+        console.warn(e)
+        const errorMessage = 'Gagal membaca data registrasi dari session!'
+        $('#modal-error-content').text(errorMessage)
+        $('#modal-error').modal('show')
+      }
+
+      const $captureLink = $('#capture-url')
+      $captureLink.attr('href', $captureLink.attr('href') + `?capture=${encodeURI(captureMethod)}`)
+    })
+  </script>
+{% endblock %}
+

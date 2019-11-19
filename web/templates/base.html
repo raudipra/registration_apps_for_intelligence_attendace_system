@@ -38,7 +38,7 @@
                 <a href="dashboard.html"><i class="ti-camera"></i><span>Camera</span></a>
               </li>
               <li>
-                <a href="person.html"><i class="ti-user"></i><span>Personnel</span></a>
+                <a href="{{ url_for('personnel.register_initial_screen')}}"><i class="ti-user"></i><span>Personnel</span></a>
               </li>
               <li>
                 <a href="javascript:void(0)" aria-expanded="true"><i class="ti-briefcase"></i><span>Data
@@ -57,7 +57,7 @@
                   <i class="ti-settings"></i><span>Settings</span>
                 </a>
                 <ul class="collapse">
-                  <li><a href="cameras.html">Camera</a></li>
+                  <li><a href="{{ url_for('user_config.camera_config') }}">Camera</a></li>
                   <li><a href="javascript:void(0)" aria-expanded="true">Registration</a>
                     <ul class="collapse">
                       <li><a href="camera_form.html">Camera</a></li>
