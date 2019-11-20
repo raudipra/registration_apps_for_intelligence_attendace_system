@@ -2,3 +2,303 @@
 <!--
   TODO STUB
 -->
+{% block title %}
+Pendaftaran Personel - Pengambilan Gambar Wajah
+{% endblock %}
+
+{% block page_title %}
+Pendaftaran Personel - Pengambilan Gambar Wajah
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <!-- Controller part -->
+  <div class="col-4 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 id="picture-title" class="header-title">Kontrol</h4>
+        <p id="picture-hint">
+          Arahkan kamera ke arah samping kanan wajah pengguna.<br />
+          Pastikan bagian kanan wajah terlihat dengan jelas.
+        </p>
+        <h1 id="seconds" class="d-none"></h1>
+        <div class="form-row align-items-center">
+          <div class="col-auto">
+            <label class="mr-sm-2" for="timer-duration">Timer (detik)</label>
+            <input id="timer-duration" type="number" class="form-control mb-2" value="5" min="3" step="1">
+          </div>
+          <div class="col-auto">
+            <button id="picture-capture" type="button" class="btn btn-primary btn-flat btn-lg mt-3">Ambil Foto</button>
+            <button id="picture-reset" type="button" class="d-none btn btn-danger btn-flat btn-lg mt-3">Ulangi</button>
+            <button id="picture-save" type="button" class="d-none btn btn-success btn-flat btn-lg mt-3">Simpan Foto & Lanjutkan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Camera preview part -->
+  <div class="col-8 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <div id="picture-live" class="embed-responsive embed-responsive-4by3">
+          <video class="embed-responsive-item" id="current-camera">Hasil luaran kamera akan muncul pada kotak
+            ini.</video>
+        </div>
+        <div class="d-none embed-responsive embed-responsive-4by3" id="picture-preview">
+          <canvas id="canvas" class="embed-responsive-item"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-4 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="header-title">Wajah - Kanan</h4>
+        <img id="picture-right" src="{{ url_for('static', filename='img/user_placeholder.svg') }}" alt="Tampak Kanan">
+      </div>
+    </div>
+  </div>
+  <div class="col-4 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="header-title">Wajah - Depan</h4>
+        <img id="picture-front" src="{{ url_for('static', filename='img/user_placeholder.svg') }}" alt="Tampak Depan">
+      </div>
+    </div>
+  </div>
+  <div class="col-4 mt-5">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="header-title">Wajah - Kiri</h4>
+        <img id="picture-left" src="{{ url_for('static', filename='img/user_placeholder.svg') }}" alt="Tampak Kiri">
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="col-12 mt-5">
+    <small>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a
+      href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></small>
+  </div>
+</div>
+{% include "partials/modal-error.html" %}
+{% endblock %}
+
+{% block js_scripts %}
+<script src="{{ url_for('static', filename='js/camera-object.js') }}"></script>
+<script>
+  $(() => {
+    const MESSAGE_DISPLAY = {
+      right: {
+        title: 'Tampak Muka Kanan',
+        hint: 'Arahkan kamera ke arah samping kanan wajah pengguna.<br/>Pastikan bagian kanan wajah terlihat dengan jelas.'
+      },
+      front: {
+        title: 'Tampak Muka Depan',
+        hint: 'Arahkan kamera ke arah depan wajah pengguna.<br/>Pastikan bagian depan wajah terlihat dengan jelas.'
+      },
+      left: {
+        title: 'Tampak Muka Kiri',
+        hint: 'Arahkan kamera ke arah kiri wajah pengguna.<br/>Pastikan bagian kiri wajah terlihat dengan jelas.'
+      },
+      end: {
+        title: 'Pengambilan Wajah Selesai',
+        hint: 'Pengambilan wajah telah selesai.'
+      }
+    }
+
+    const pictureRight = document.getElementById('picture-right')
+    const pictureFront = document.getElementById('picture-front')
+    const pictureLeft = document.getElementById('picture-left')
+
+    // try to load the configuration.
+    let config
+    try {
+      config = JSON.parse(localStorage.getItem('config'))
+    } catch (e) {
+      console.warn(e)
+      config = null
+    }
+
+    const camera = new CameraObject(config ? config.cameras.faceRight : null, 'current-camera', 'canvas')
+
+    // attach video
+    navigator.mediaDevices.getUserMedia(camera.mediaConstraints)
+      .then(stream => {
+        camera.attachStream(stream)
+      })
+      .catch(err => {
+        $('#modal-error-content').html(`<p>Error ${status}. Detail: ${err}</p>`)
+        $('#modal-error').modal('show')
+      })
+
+    let currentPicture = 'right' // shows which picture is being taken.
+    $('#picture-capture').click(ev => {
+      // start timer
+      const $timer = $('#timer-duration')
+      $timer.prop('readonly', true)
+
+      $('#picture-capture').prop('disabled', 'disabled')
+      let seconds = Number.parseInt($timer.val())
+      let secondsLeft = seconds
+
+      // show the countdown
+      const $seconds = $('#seconds')
+      $seconds.text(secondsLeft)
+      $seconds.removeClass('d-none')
+
+      let timer
+      timer = setInterval(handleTimer, 1000)
+
+      function handleTimer() {
+        secondsLeft--
+        $seconds.text(secondsLeft)
+        if (secondsLeft === 0) {
+          clearInterval(timer)
+
+          // take picture
+          camera.captureSnapshotFromCurrentStream()
+          switch (currentPicture) {
+            case 'right':
+              pictureRight.setAttribute('src', camera.canvasContentPNG)
+              currentPicture = 'front'
+              break
+            case 'front':
+              pictureFront.setAttribute('src', camera.canvasContentPNG)
+              currentPicture = 'left'
+              break
+            case 'left':
+              pictureLeft.setAttribute('src', camera.canvasContentPNG)
+              currentPicture = 'end'
+              break
+          }
+
+          // change the message
+          $('#picture-hint').html(MESSAGE_DISPLAY[currentPicture].hint)
+
+          if (currentPicture !== 'end') {
+            // rearm for next
+            secondsLeft = seconds
+            $seconds.text(seconds)
+            timer = setInterval(handleTimer, 1000)
+          } else {
+            // pause and show confirmation.
+            camera.pauseStream()
+            $seconds.addClass('d-none')
+            $('#picture-capture').addClass('d-none')
+            $('#picture-reset').removeClass('d-none')
+            $('#picture-save').removeClass('d-none')
+          }
+        }
+      }
+    })
+
+    function dataURItoBlob(dataURI) {
+      // convert base64 to raw binary data held in a string
+      // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this
+      const byteString = atob(dataURI.split(',')[1]);
+
+      // separate out the mime component
+      const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+
+      // write the bytes of the string to an ArrayBuffer
+      const ab = new ArrayBuffer(byteString.length);
+
+      // create a view into the buffer
+      const ia = new Uint8Array(ab);
+
+      // set the bytes of the buffer to the correct values
+      for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+      }
+
+      // write the ArrayBuffer to a blob, and you're done
+      const blob = new Blob([ab], { type: mimeString })
+      return blob
+    }
+
+    $('#picture-save').click(ev => {
+      const blobImgRight = dataURItoBlob(pictureRight.src)
+      const blobImgFront = dataURItoBlob(pictureFront.src)
+      const blobImgLeft = dataURItoBlob(pictureLeft.src)
+
+      const imgFiles = [blobImgRight, blobImgFront, blobImgLeft].map(
+        (blob, idx) => new File([blob], `face${idx+1}.png`, { type: 'image/png' })
+      )
+
+      // upload the files for checking
+      const formData = new FormData()
+      imgFiles.forEach((file, idx) => {
+        formData.append(`face${idx+1}`, file)
+      })
+
+      $.ajax({
+        method: 'POST',
+        url: "{{ url_for('api_endpoints.check_face_three')}}",
+        contentType: false,
+        enctype: 'multipart/form-data',
+        cache: false,
+        data: formData,
+        processData: false
+      }).done(data => {
+        let errorMessage = ''
+        Object.keys(data).forEach(status => {
+          const part = status.substr(0, 5)
+
+          // display status
+          const statusCode = data[status]
+          if (statusCode !== 0) {
+            if (errorMessage.length === 0) {
+              errorMessage += '<ul>'
+            }
+
+            errorMessage += `<li>${FACE_MAP[part]}: ${STATUS_MESSAGE[statusCode]}</li>`
+          }
+        })
+        if (errorMessage.startsWith('<ul>')) {
+          errorMessage += '</ul>'
+        }
+
+        if (errorMessage.length > 0) {
+          // display error as modal
+          $('#modal-error-content').html(`<p>Gagal menyimpan gambar! Hasil pengecekan:</p>${errorMessage}`)
+          $('#modal-error').modal('show')
+          return
+        }
+
+        saveToSession()
+      }).fail((xhr, status, err) => {
+        $('#modal-error-content').html(`<p>Error ${status}. Detail: ${err}</p>`)
+        $('#modal-error').modal('show')
+      })
+    })
+
+    const PLACEHOLDER_IMG_SRC = "{{ url_for('static', filename='img/user_placeholder.svg') }}"
+    $('#picture-reset').click(ev => {
+      currentPicture = 'right'
+      $('#picture-hint').html(MESSAGE_DISPLAY[currentPicture].hint)
+
+      camera.resumeStream()
+      $('#picture-capture').removeClass('d-none')
+      $('#picture-reset').addClass('d-none')
+      $('#picture-save').addClass('d-none')
+      $('#timer-duration').prop('readonly', false)
+
+      pictureRight.setAttribute('src', PLACEHOLDER_IMG_SRC)
+      pictureFront.setAttribute('src', PLACEHOLDER_IMG_SRC)
+      pictureLeft.setAttribute('src', PLACEHOLDER_IMG_SRC)
+    })
+
+    function saveToSession() {
+      const sessionData = {
+        faceLeft: pictureLeft.src,
+        faceFront: pictureFront.src,
+        faceRight: pictureRight.src
+      }
+      sessionStorage.setItem('personnel_reg', JSON.stringify(sessionData))
+      // move to next page
+      window.location = "{{ url_for('personnel.capture_ektp') }}"
+    }
+  })
+</script>
+{% endblock %}
