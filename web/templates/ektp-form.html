@@ -60,46 +60,6 @@
               <label for="jenis_kelamin" class="col-form-label">Jenis Kelamin</label>
               <input class="form-control" type="text" name="jenis_kelamin">
             </div>
-            <div class="form-group">
-              <label for="gol_darah" class="col-form-label">Gol. Darah</label>
-              <input class="form-control" type="text" name="gol_darah">
-            </div>
-            <div class="form-group">
-              <label for="alamat" class="col-form-label">Alamat</label>
-              <input class="form-control" type="text" name="alamat">
-            </div>
-            <div class="form-group">
-              <label for="rtrw" class="col-form-label">RT/RW</label>
-              <input class="form-control" type="text" name="rtrw">
-            </div>
-            <div class="form-group">
-              <label for="kel_desa" class="col-form-label">Kelurahan/Desa</label>
-              <input class="form-control" type="text" name="kel_desa">
-            </div>
-            <div class="form-group">
-              <label for="kecamatan" class="col-form-label">Kecamatan</label>
-              <input class="form-control" type="text" name="kecamatan">
-            </div>
-            <div class="form-group">
-              <label for="kabupaten_kota" class="col-form-label">Kabupaten/Kota</label>
-              <input class="form-control" type="text" name="kabupaten_kota">
-            </div>
-            <div class="form-group">
-              <label for="provinsi" class="col-form-label">Provinsi</label>
-              <input class="form-control" type="text" name="provinsi">
-            </div>
-            <div class="form-group">
-              <label for="agama" class="col-form-label">Agama</label>
-              <input class="form-control" type="text" name="agama">
-            </div>
-            <div class="form-group">
-              <label for="status_perkawinan" class="col-form-label">Status Perkawinan</label>
-              <input class="form-control" type="text" name="status_perkawinan">
-            </div>
-            <div class="form-group">
-              <label for="pekerjaan" class="col-form-label">Pekerjaan</label>
-              <input class="form-control" type="text" name="pekerjaan">
-            </div>
             <button type="submit" class="btn btn-lg btn-primary">Simpan</button>
           </form>
         </div>
@@ -202,15 +162,6 @@
               $('input[name="tempat_lahir"]').val(data.tempat_lahir)
               $('input[name="tanggal_lahir"]').val(data.tanggal_lahir)
               $('input[name="jenis_kelamin"]').val(data.jenis_kelamin)
-              $('input[name="gol_darah"]').val(data.gol_darah)
-              $('input[name="rtrw"]').val(data.rtrw)
-              $('input[name="kel_desa"]').val(data.kel_desa)
-              $('input[name="kecamatan"]').val(data.kecamatan)
-              $('input[name="kabupaten_kota"]').val(data.kabupaten_kota)
-              $('input[name="provinsi"]').val(data.provinsi)
-              $('input[name="agama"]').val(data.agama)
-              $('input[name="status_perkawinan"]').val(data.status_perkawinan)
-              $('input[name="pekerjaan"]').val(data.pekerjaan)
             }).fail((xhr, status, err) => {
               $('#modal-error-content').html(`<p>Error ${status}. Detail: ${err}</p>`)
               $('#modal-error').modal('show')

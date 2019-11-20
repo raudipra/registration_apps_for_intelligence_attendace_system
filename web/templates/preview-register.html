@@ -18,8 +18,8 @@ No editing is allowed.
   <div class="col-6 mt-5">
     <div class="card">
       <div class="card-body">
-        <h4 class="header-title">Wajah Kiri</h4>
-        <img id="picture-face-left" src="" alt="Wajah Kiri"></img>
+        <h4 class="header-title">Wajah Kanan</h4>
+        <img id="picture-face-right" src="" alt="Wajah Kanan"></img>
       </div>
     </div>
   </div>
@@ -34,8 +34,8 @@ No editing is allowed.
   <div class="col-6 mt-5">
     <div class="card">
       <div class="card-body">
-        <h4 class="header-title">Wajah Kanan</h4>
-        <img id="picture-face-right" src="" alt="Wajah Kanan"></img>
+        <h4 class="header-title">Wajah Kiri</h4>
+        <img id="picture-face-left" src="" alt="Wajah Kiri"></img>
       </div>
     </div>
   </div>
@@ -51,7 +51,7 @@ No editing is allowed.
     <div class="card">
       <div class="card-body">
         <h4 class="header-title">Data eKTP</h4>
-        <form id="form">
+        <form id="form" method="POST" action="{{ url_for('personnel.register_personnel') }}">
           <div class="form-group">
             <label for="nik" class="col-form-label">NIK</label>
             <input readonly class="form-control" type="text" name="nik">
@@ -72,71 +72,47 @@ No editing is allowed.
             <label for="jenis_kelamin" class="col-form-label">Jenis Kelamin</label>
             <input readonly class="form-control" type="text" name="jenis_kelamin">
           </div>
-          <div class="form-group">
-            <label for="gol_darah" class="col-form-label">Gol. Darah</label>
-            <input readonly class="form-control" type="text" name="gol_darah">
-          </div>
-          <div class="form-group">
-            <label for="alamat" class="col-form-label">Alamat</label>
-            <input readonly class="form-control" type="text" name="alamat">
-          </div>
-          <div class="form-group">
-            <label for="rtrw" class="col-form-label">RT/RW</label>
-            <input readonly class="form-control" type="text" name="rtrw">
-          </div>
-          <div class="form-group">
-            <label for="kel_desa" class="col-form-label">Kelurahan/Desa</label>
-            <input readonly class="form-control" type="text" name="kel_desa">
-          </div>
-          <div class="form-group">
-            <label for="kecamatan" class="col-form-label">Kecamatan</label>
-            <input readonly class="form-control" type="text" name="kecamatan">
-          </div>
-          <div class="form-group">
-            <label for="kabupaten_kota" class="col-form-label">Kabupaten/Kota</label>
-            <input readonly class="form-control" type="text" name="kabupaten_kota">
-          </div>
-          <div class="form-group">
-            <label for="provinsi" class="col-form-label">Provinsi</label>
-            <input readonly class="form-control" type="text" name="provinsi">
-          </div>
-          <div class="form-group">
-            <label for="agama" class="col-form-label">Agama</label>
-            <input readonly class="form-control" type="text" name="agama">
-          </div>
-          <div class="form-group">
-            <label for="status_perkawinan" class="col-form-label">Status Perkawinan</label>
-            <input readonly class="form-control" type="text" name="status_perkawinan">
-          </div>
-          <div class="form-group">
-            <label for="pekerjaan" class="col-form-label">Pekerjaan</label>
-            <input readonly class="form-control" type="text" name="pekerjaan">
-          </div>
           <button type="submit" class="btn btn-lg btn-primary">Simpan</button>
         </form>
       </div>
     </div>
   </div>
 </div>
-<div class="modal fade" id="modal-error">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Error</h5>
-        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
-      </div>
-      <div class="modal-body" id="modal-error-content"></div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
-      </div>
-    </div>
-  </div>
-</div>
+{% include "partials/modal-error.html" %}
 {% endblock %}
 
 {% block js_scripts %}
   <script>
+    function dataURItoBlob(dataURI) {
+      // convert base64 to raw binary data held in a string
+      // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this
+      const byteString = atob(dataURI.split(',')[1]);
+
+      // separate out the mime component
+      const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+
+      // write the bytes of the string to an ArrayBuffer
+      const ab = new ArrayBuffer(byteString.length);
+
+      // create a view into the buffer
+      const ia = new Uint8Array(ab);
+
+      // set the bytes of the buffer to the correct values
+      for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+      }
+
+      // write the ArrayBuffer to a blob, and you're done
+      const blob = new Blob([ab], { type: mimeString })
+      return blob
+    }
+
     $(() => {
+      const pictureFaceLeft = document.getElementById('picture-face-left')
+      const pictureFaceFront = document.getElementById('picture-face-front')
+      const pictureFaceRight = document.getElementById('picture-face-right')
+      const pictureEktp = document.getElementById('picture-ektp')
+
       // load config to determine the capture-url
       let data
       try {
@@ -155,15 +131,6 @@ No editing is allowed.
         $('input[name="tempat_lahir"]').val(ektpData.tempat_lahir)
         $('input[name="tanggal_lahir"]').val(ektpData.tanggal_lahir)
         $('input[name="jenis_kelamin"]').val(ektpData.jenis_kelamin)
-        $('input[name="gol_darah"]').val(ektpData.gol_darah)
-        $('input[name="rtrw"]').val(ektpData.rtrw)
-        $('input[name="kel_desa"]').val(ektpData.kel_desa)
-        $('input[name="kecamatan"]').val(ektpData.kecamatan)
-        $('input[name="kabupaten_kota"]').val(ektpData.kabupaten_kota)
-        $('input[name="provinsi"]').val(ektpData.provinsi)
-        $('input[name="agama"]').val(ektpData.agama)
-        $('input[name="status_perkawinan"]').val(ektpData.status_perkawinan)
-        $('input[name="pekerjaan"]').val(ektpData.pekerjaan)
       } catch (e) {
         console.warn(e)
         const errorMessage = 'Gagal membaca data registrasi dari session!'
@@ -171,8 +138,39 @@ No editing is allowed.
         $('#modal-error').modal('show')
       }
 
-      const $captureLink = $('#capture-url')
-      $captureLink.attr('href', $captureLink.attr('href') + `?capture=${encodeURI(captureMethod)}`)
+      $('#form').on('submit', ev => {
+        ev.preventDefault()
+        ev.stopPropagation()
+
+        const url = $('#form').attr('action')
+        const formData = new FormData()
+        formData.append('ektp', JSON.stringify(data.ektp.data))
+
+        const faceImgs = [ pictureFaceRight, pictureFaceFront, pictureFaceLeft ]
+        faceImgs.map(pic => dataURItoBlob(pic.src))
+          .map((blob, idx) => new File([blob], `img_face${idx+1}.png`, { type: 'image/png' }))
+          .forEach((file, idx) => {
+            formData.append(`img_face${idx+1}`, file)
+          })
+        formData.append('img_ektp', new File([dataURItoBlob(pictureEktp.src)], 'img_ektp.png', { type: 'image/png' }))
+        $.ajax({
+          method: 'POST',
+          url: url,
+          contentType: false,
+          enctype: 'multipart/form-data',
+          cache: false,
+          data: formData,
+          processData: false
+        })
+        .done(result => {
+          // upload success.
+          console.debug(result.id)
+        })
+        .fail((xhr, status, err) => {
+          $('#modal-error-content').html(`<p>Error ${status}. Detail: ${err}</p>`)
+          $('#modal-error').modal('show')
+        })
+      })
     })
   </script>
 {% endblock %}

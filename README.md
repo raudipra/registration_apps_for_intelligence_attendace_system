@@ -1,6 +1,6 @@
-\[Cognixy\] IAS - Registration Module
+#\[Cognixy\] IAS - Registration Module
 
-# How to Run (development)
+## How to Run (development)
 
 1. Install required python dependencies using `pip install -e .`
 2. Make sure `tesseract` is available in your system's PATH

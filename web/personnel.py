@@ -1,11 +1,13 @@
 import functools
 import numpy as np
 import cv2
+import json
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, session, url_for, current_app
+    Blueprint, flash, g, redirect, render_template, request, session, url_for, current_app, make_response
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 from .ocr.ektp import extract_info_from_ektp_cv2
+from .api.form_upload import upload_form
 
 bp = Blueprint('personnel', __name__, url_prefix='/personnel')
 
@@ -53,3 +55,36 @@ def capture_ektp():
 @bp.route('/register/preview')
 def preview():
     return render_template('/preview-register.html')
+
+@bp.route('/register', methods=('POST',))
+def register_personnel():
+    # check validity of images
+    err = {}
+    img_keys = ['img_face1', 'img_face2', 'img_face3', 'img_ektp']
+    for key in img_keys:
+        if key not in request.files:
+            err[key] = 'No valid image detected'
+            continue
+        if request.files[key].filename == '':
+            err[key] = 'No valid image detected'
+
+    # check if the ektp form exists
+    if 'ektp' not in request.form:
+        err['ektp'] = 'missing data!'
+
+    if bool(err): # there is an error
+        response = make_response(err, 400)
+        response.mimetype = 'application/json'
+        return response
+
+    ektp = json.loads(request.form['ektp'])
+    img_face1, img_face2, img_face3, img_ektp = map(
+        lambda key: cv2.imdecode(np.fromstring(request.files[key].read(), np.uint8), cv2.IMREAD_UNCHANGED),
+        img_keys
+    )
+
+    form_id = upload_form(ektp, img_face1, img_face2, img_face3, img_ektp)
+
+    response = make_response({ 'id': form_id })
+    response.mimetype = 'application/json'
+    return response

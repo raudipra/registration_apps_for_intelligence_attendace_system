@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 import pytesseract
 import os
+import datetime
+import warnings
 from fuzzywuzzy import fuzz
 
 def data_uri_to_cv2_img(uri):
@@ -63,6 +65,13 @@ def parse_ektp(ocr_result: str) -> dict:
         birth_place_date = lines[i][18:].strip()
         result['tempat_lahir'] = birth_place_date[:birth_place_date.find(',')].strip()
         result['tanggal_lahir'] = birth_place_date[birth_place_date.find(',')+1:].strip()
+
+        # try to parse as valid date.
+        try:
+            birth_date = datetime.strptime(result['tanggal_lahir'], '%d-%m-%Y')
+            result['tanggal_lahir'] = birth_date.strftime('%Y-%m-%d')
+        except ValueError: # OCR reading error
+            warnings.warn('Failed to read birth_date data. Parsed string: ' + result['tanggal_lahir'])
 
         # parse gender and blood type
         i += 1
