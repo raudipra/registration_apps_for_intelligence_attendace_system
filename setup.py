@@ -8,6 +8,6 @@ setup(
     zip_safe=False,
     install_requires=[
         'flask', 'pytesseract', 'opencv-contrib-python-headless',
-        'fuzzywuzzy', 'numpy', 'python-levenshtein'
+        'fuzzywuzzy', 'numpy', 'python-levenshtein', 'imutils'
     ],
 )
